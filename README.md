@@ -1,6 +1,6 @@
-# dypa-autocliker
+# dypa-autoclicker
 
-Desktop Python app for automating repetitive **Next** button clicks in a DYPA workflow with color detection, OCR-based progress reading, and a small control panel.
+Desktop Python app for automating repetitive **Next** button clicks in DYPA browser workflows, with color detection, OCR-based progress reading, and a small control panel.
 
 ## Features
 
