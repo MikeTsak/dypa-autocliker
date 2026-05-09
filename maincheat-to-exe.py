@@ -16,7 +16,6 @@ import sys
 # --- HIDE PYTORCH WARNINGS ---
 warnings.filterwarnings("ignore", category=UserWarning)
 
-
 # ==========================================
 # EXE PATH RESOLUTION (CRITICAL FOR PACKAGING)
 # ==========================================
@@ -29,7 +28,6 @@ def get_resource_path(relative_path):
         base_path = os.path.abspath(".")
 
     return os.path.join(base_path, relative_path)
-
 
 # ==========================================
 # BOOTING / SPLASH SCREEN
@@ -44,26 +42,28 @@ def show_splash():
     splash_window = sg.Window("Loading...", splash_layout, no_titlebar=True, keep_on_top=True, finalize=True,
                               element_justification='c', background_color='#ffffff')
 
-    for i in range(1, 50):
+    for i in range(1, 30):
         splash_window['-PROG-'].update(i)
-        splash_window.read(timeout=10)
+        splash_window.read(timeout=1)
 
-    # FIXED: Directing EasyOCR to the internal 'models' folder for EXE portability
+    # Point EasyOCR to the internal 'models' folder for EXE portability
+    # Use 'models' (plural) to match the packaging instructions below
     models_path = get_resource_path('models')
+    
     if not os.path.exists(models_path):
         os.makedirs(models_path, exist_ok=True)
 
+    # reader must be global or returned to be used in vision functions
     ocr_reader = easyocr.Reader(['en'], gpu=False, verbose=False, model_storage_directory=models_path)
 
-    for i in range(50, 101):
+    for i in range(30, 101):
         splash_window['-PROG-'].update(i)
-        splash_window.read(timeout=10)
+        splash_window.read(timeout=1)
 
     splash_window.close()
     return ocr_reader
 
-
-# Initialize
+# Global reader instance
 reader = show_splash()
 
 # ==========================================
@@ -80,19 +80,16 @@ SESSION_START_SECONDS = 80 * 60
 MOVE_COOLDOWN_NORMAL = (15, 45)
 MOVE_COOLDOWN_TURBO = (5, 7)
 
-
 # ==========================================
 # SOUND & LOGIC FUNCTIONS
 # ==========================================
 def play_click_sound(muted):
     if not muted: winsound.Beep(800, 60)
 
-
 def play_alarm():
     for _ in range(4):
         winsound.Beep(2500, 200)
         winsound.Beep(1800, 200)
-
 
 def get_random_delay(values):
     if values['-TURBO-']: return random.randint(*SPEEDS['TURBO'])
@@ -100,22 +97,19 @@ def get_random_delay(values):
     if values['-NORMAL-']: return random.randint(*SPEEDS['NORMAL'])
     return random.randint(*SPEEDS['SLOW'])
 
-
 def format_time(seconds):
-    h, m, s = int(seconds // 3600), int((seconds % 3600) // 60), int(seconds % 60)
+    h = int(seconds // 3600)
+    m = int((seconds % 3600) // 60)
+    s = int(seconds % 60)
     return f"{h:01d}:{m:02d}:{s:02d}" if h > 0 else f"{m:02d}:{s:02d}"
-
 
 def calculate_all_etas(current, total):
     remaining = total - current
     if remaining <= 0: return "Done!"
-
     def get_eta(low, high):
         total_sec = remaining * ((low + high) // 2)
         return f"{total_sec // 3600}h {(total_sec % 3600) // 60}m"
-
     return f"T:{get_eta(*SPEEDS['TURBO'])} | F:{get_eta(*SPEEDS['FAST'])} | N:{get_eta(*SPEEDS['NORMAL'])} | S:{get_eta(*SPEEDS['SLOW'])}"
-
 
 # ==========================================
 # VISION FUNCTIONS
@@ -134,9 +128,7 @@ def find_button_by_color():
                 if area > largest_area:
                     largest_area, best_center = area, (x + (w // 2), y + (h // 2))
         return best_center, f"Vision: OK ({largest_area}px)" if best_center else "Vision: Searching..."
-    except:
-        return None, "Vision Error"
-
+    except: return None, "Vision Error"
 
 def read_progress_data(bx, by):
     try:
@@ -147,13 +139,11 @@ def read_progress_data(bx, by):
         results = reader.readtext(thresh, detail=0)
         nums = re.findall(r'\d+', " ".join(results))
         if len(nums) >= 2: return int(nums[0]), int(nums[-1])
-    except:
-        pass
+    except: pass
     return None, None
 
-
 # ==========================================
-# MAIN UI SETUP
+# MODERN UI SETUP
 # ==========================================
 sg.theme('LightGray1')
 
@@ -198,7 +188,7 @@ layout = [
              expand_x=True)]
 ]
 
-window = sg.Window("DYPA Ultimate Bot V7.5", layout, keep_on_top=True, element_justification='c', size=(550, 580),
+window = sg.Window("DYPA Ultimate Bot V7.5", layout, keep_on_top=True, element_justification='c', size=(550, 600),
                    finalize=True)
 
 bot_active, grand_timer, next_click_timer, next_move_timer, last_update = False, SESSION_START_SECONDS, 0, 0, time.time()
@@ -209,13 +199,11 @@ while True:
 
     if event == "Manual":
         sg.popup(
-            "DYPA BOT MANUAL\n\n1. Press 'Test Vision' to verify button detection.\n2. Choose a Speed Profile.\n3. Press 'START BOT'.\n4. Use 'ESC' for Emergency Stop.",
+            "DYPA BOT MANUAL\n\n1. Press 'Test Vision' to verify button detection.\n2. Choose a Speed Profile.\n3. Press 'START BOT'.\n4. Use 'ESC' for Emergency Stop.\n5. Bot stops automatically 5 slides before end.",
             title="Manual", keep_on_top=True)
 
     if event == "Sound Test":
-        play_click_sound(False);
-        time.sleep(0.5);
-        play_alarm()
+        play_click_sound(False); time.sleep(0.5); play_alarm()
 
     if event == "Start Bot":
         bot_active, grand_timer, last_update = True, SESSION_START_SECONDS, time.time()
@@ -241,9 +229,7 @@ while True:
         now = time.time()
         if now - last_update >= 1:
             last_update = now
-            grand_timer -= 1;
-            next_click_timer -= 1;
-            next_move_timer -= 1
+            grand_timer -= 1; next_click_timer -= 1; next_move_timer -= 1
             window["-GRAND-"].update(format_time(grand_timer))
             window["-TIMER-"].update(format_time(next_click_timer))
             window["-MOVE_TIMER-"].update(format_time(next_move_timer))
