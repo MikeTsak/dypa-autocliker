@@ -70,4 +70,4 @@ python maincheat.py
 
 ## Disclaimer
 
-Use this project responsibly and only in environments where automation is allowed.
+Use this project only where you have permission to automate interactions. Before using it, confirm that automation complies with the platform's terms of service, workplace or training rules, and any other applicable policies or laws. You are responsible for any misuse or account consequences that result from running the tool.
