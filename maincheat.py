@@ -20,20 +20,18 @@ warnings.filterwarnings("ignore", category=UserWarning)
 # ==========================================
 def show_splash():
     splash_layout = [
-        [sg.Text("DYPA Ultimate Bot", font=("Arial", 25, "bold"), text_color="darkblue")],
-        [sg.Text("Created by MikeTsak.gr", font=("Arial", 12, "italic"))],
-        [sg.Text("Initializing OCR Engine...", key="-STATUS-", font=("Arial", 10))],
-        [sg.ProgressBar(100, orientation='h', size=(20, 20), key='-PROG-')]
+        [sg.Text("DYPA Ultimate Bot", font=("Segoe UI", 25, "bold"), text_color="#1c4e80")],
+        [sg.Text("Created by MikeTsak.gr", font=("Segoe UI", 12, "italic"))],
+        [sg.Text("Initializing OCR Engine...", key="-STATUS-", font=("Segoe UI", 10))],
+        [sg.ProgressBar(100, orientation='h', size=(20, 20), key='-PROG-', bar_color=('#1c4e80', '#eeeeee'))]
     ]
     splash_window = sg.Window("Loading...", splash_layout, no_titlebar=True, keep_on_top=True, finalize=True,
-                              element_justification='c')
+                              element_justification='c', background_color='#ffffff')
 
-    # Simulate loading progress while initializing OCR
     for i in range(1, 50):
         splash_window['-PROG-'].update(i)
         splash_window.read(timeout=10)
 
-    # Initialize OCR
     ocr_reader = easyocr.Reader(['en'], gpu=False, verbose=False)
 
     for i in range(50, 101):
@@ -44,7 +42,6 @@ def show_splash():
     return ocr_reader
 
 
-# Trigger splash and load engine
 reader = show_splash()
 
 # ==========================================
@@ -57,10 +54,7 @@ SPEEDS = {
     'SLOW': (360, 540)  # 6-9 mins
 }
 
-TARGET_COORDINATES = (1738, 864)
 SESSION_START_SECONDS = 80 * 60  # 1 hour 20 minutes
-
-# Humanizer intervals
 MOVE_COOLDOWN_NORMAL = (15, 45)
 MOVE_COOLDOWN_TURBO = (5, 7)
 
@@ -139,41 +133,72 @@ def read_progress_data(bx, by):
 
 
 # ==========================================
-# MAIN UI SETUP
+# MODERN UI SETUP
 # ==========================================
-sg.theme('SystemDefault')
+sg.theme('LightGray1')
+
+# Frame for Timers
+timer_frame = [
+    [sg.Text("SESSION TIME", font=("Segoe UI", 9, "bold"), text_color="#555555")],
+    [sg.Text("01:20:00", key="-GRAND-", font=("Segoe UI", 24, "bold"), text_color="#1c4e80")],
+    [sg.Text("NEXT CLICK", font=("Segoe UI", 9, "bold"), text_color="#555555"),
+     sg.Text("00:00", key="-TIMER-", font=("Segoe UI", 12, "bold"), text_color="#d9534f")]
+]
+
+# Frame for Progress
+progress_frame = [
+    [sg.Text("PROGRESS", font=("Segoe UI", 9, "bold"), text_color="#555555")],
+    [sg.Text("? / ?", key="-PROGRESS-", font=("Segoe UI", 18, "bold"), text_color="#333333")],
+    [sg.Text("HUMANIZER", font=("Segoe UI", 9, "bold"), text_color="#555555"),
+     sg.Text("00:00", key="-MOVE_TIMER-", font=("Segoe UI", 10, "bold"), text_color="#5cb85c")]
+]
 
 layout = [
-    [sg.Text("Grand Session Timer:", font=("Arial", 10)),
-     sg.Text("01:20:00", key="-GRAND-", font=("Arial", 14, "bold"), text_color="darkblue")],
+    # Header
+    [sg.Text("DYPA ULTIMATE BOT", font=("Segoe UI", 18, "bold"), text_color="#1c4e80"), sg.Push(),
+     sg.Button("Manual", button_color="#777777", size=(8, 1))],
     [sg.HSeparator()],
-    [sg.Radio('Turbo', 'SPEED', key='-TURBO-', text_color="red"),
+
+    # Speed Controls
+    [sg.Text("Select Speed Profile:", font=("Segoe UI", 10, "bold"))],
+    [sg.Radio('Turbo', 'SPEED', key='-TURBO-', text_color="#d9534f"),
      sg.Radio('Fast', 'SPEED', key='-FAST-'),
      sg.Radio('Normal', 'SPEED', default=True, key='-NORMAL-'),
      sg.Radio('Slow', 'SPEED', key='-SLOW-')],
-    [sg.Checkbox('Mute Clicks', key='-MUTE-'), sg.Checkbox('Humanizer (Moves)', default=True, key='-MOVE_ACTIVE-')],
-    [sg.HSeparator()],
-    [sg.Text("Progress:"), sg.Text("? / ?", key="-PROGRESS-", font=("Arial", 11, "bold")),
-     sg.Text("Next Click:"), sg.Text("00:00", key="-TIMER-", font=("Arial", 14, "bold"))],
-    [sg.Text("Humanizer Timer:"), sg.Text("00:00", key="-MOVE_TIMER-", font=("Arial", 11, "bold"), text_color="green")],
-    [sg.Text("Live ETAs:", font=("Arial", 9, "bold"))],
-    [sg.Text("T: -- | F: -- | N: -- | S: --", key="-ETA-", font=("Arial", 9, "bold"), text_color="darkred")],
-    [sg.Text("Log:"), sg.Text("System Ready", key="-LOG-", size=(40, 1), font=("Arial", 8))],
-    [sg.HSeparator()],
-    [sg.Button("Start Bot", button_color="green", size=(10, 1)), sg.Button("Stop Bot", size=(10, 1)),
-     sg.Button("Sound Test", size=(10, 1))],
-    [sg.Button("Test Vision", size=(10, 1), button_color="blue"), sg.Button("Exit", button_color="red", size=(10, 1))]
+
+    # Options
+    [sg.Checkbox('Mute Clicks', key='-MUTE-'), sg.Checkbox('Humanizer Moves', default=True, key='-MOVE_ACTIVE-')],
+
+    # Info Panels (Timers and Progress)
+    [sg.Frame("", timer_frame, element_justification='c', border_width=0, p=(10, 10)),
+     sg.VerticalSeparator(),
+     sg.Frame("", progress_frame, element_justification='c', border_width=0, p=(10, 10))],
+
+    # Live ETAs
+    [sg.Text("ESTIMATED FINISH TIMES", font=("Segoe UI", 8, "bold"), text_color="#777777")],
+    [sg.Text("T: -- | F: -- | N: -- | S: --", key="-ETA-", font=("Segoe UI", 9, "bold"), text_color="#1c4e80",
+             background_color="#f9f9f9", expand_x=True, justification='c')],
+
+    # Log and Actions
+    [sg.Text("LOG:", font=("Segoe UI", 8, "bold")),
+     sg.Text("Ready to start", key="-LOG-", font=("Segoe UI", 8), text_color="#555555")],
+    [sg.Button("START BOT", key="Start Bot", button_color="#5cb85c", size=(15, 2), font=("Segoe UI", 10, "bold")),
+     sg.Button("STOP BOT", key="Stop Bot", button_color="#d9534f", size=(15, 2), font=("Segoe UI", 10, "bold"))],
+
+    [sg.Button("Sound Test", size=(12, 1)), sg.Button("Test Vision", size=(12, 1)),
+     sg.Button("Exit", button_color="#333333", size=(12, 1))],
+
+    # Footer
+    [sg.HSeparator(p=(0, 10))],
+    [sg.Text("Made by MikeTsak.gr", font=("Segoe UI", 8, "italic"), text_color="#aaaaaa", justification='c',
+             expand_x=True)]
 ]
 
-window = sg.Window("DYPA Ultimate Bot V7.0 - MikeTsak.gr", layout, keep_on_top=True, element_justification='c',
-                   size=(500, 480))
+window = sg.Window("DYPA Ultimate Bot V7.5", layout, keep_on_top=True, element_justification='c', size=(550, 580),
+                   finalize=True)
 
 # State variables
-bot_active = False
-grand_timer = SESSION_START_SECONDS
-next_click_timer = 0
-next_move_timer = 0
-last_update = time.time()
+bot_active, grand_timer, next_click_timer, next_move_timer, last_update = False, SESSION_START_SECONDS, 0, 0, time.time()
 
 # ==========================================
 # MAIN EVENT LOOP
@@ -183,24 +208,25 @@ while True:
 
     if keyboard.is_pressed('esc') or event in (sg.WIN_CLOSED, "Exit"): break
 
+    if event == "Manual":
+        sg.popup(
+            "DYPA BOT MANUAL\n\n1. Press 'Test Vision' to check if the button is found.\n2. Select your desired Speed Profile.\n3. Press 'START BOT' to begin.\n4. 'ESC' key is the emergency kill-switch.",
+            title="Manual", keep_on_top=True)
+
     if event == "Sound Test":
         play_click_sound(False);
         time.sleep(0.5);
         play_alarm()
 
     if event == "Start Bot":
-        bot_active = True
-        grand_timer = SESSION_START_SECONDS
+        bot_active, grand_timer, last_update = True, SESSION_START_SECONDS, time.time()
         next_click_timer = get_random_delay(values)
-        move_range = MOVE_COOLDOWN_TURBO if values['-TURBO-'] else MOVE_COOLDOWN_NORMAL
-        next_move_timer = random.randint(*move_range)
-        last_update = time.time()
-        window["-LOG-"].update("Bot Running...")
+        next_move_timer = random.randint(*(MOVE_COOLDOWN_TURBO if values['-TURBO-'] else MOVE_COOLDOWN_NORMAL))
+        window["-LOG-"].update("RUNNING...")
 
     if event == "Stop Bot":
         bot_active = False
-        window["-GRAND-"].update(format_time(SESSION_START_SECONDS))
-        window["-LOG-"].update("Bot Stopped Manual")
+        window["-LOG-"].update("STOPPED")
 
     if event == "Test Vision":
         loc, msg = find_button_by_color()
@@ -226,11 +252,10 @@ while True:
 
             if grand_timer <= 0:
                 bot_active = False
-                window["-LOG-"].update("SESSION TIME EXPIRED")
+                window["-LOG-"].update("TIME EXPIRED")
                 play_alarm()
 
-            # --- UPDATED PRIORITY LOGIC ---
-            # 1. Check Clicker first. If it's time to click, we ignore Humanizer for this second.
+            # --- PRIORITY LOGIC ---
             if next_click_timer <= 0:
                 loc, msg = find_button_by_color()
                 if loc:
@@ -240,31 +265,26 @@ while True:
                         window["-ETA-"].update(calculate_all_etas(cur, tot))
                         if (tot - cur) <= 5:
                             bot_active = False
-                            window["-LOG-"].update("ALARM: 5 SLIDES REMAINING")
+                            window["-LOG-"].update("NEAR COMPLETION")
                             play_alarm()
                             continue
 
                     play_click_sound(values['-MUTE-'])
-                    click_dur = 0.3 if values['-TURBO-'] else 0.7
-                    pyautogui.moveTo(loc, duration=click_dur)
+                    dur = 0.3 if values['-TURBO-'] else 0.7
+                    pyautogui.moveTo(loc, duration=dur)
                     pyautogui.click()
 
-                    # Reset Click Timer
                     next_click_timer = get_random_delay(values)
-                    # Reset Humanizer Timer - Push it back so it doesn't move immediately after click
                     next_move_timer = random.randint(5, 10)
-                    window["-LOG-"].update("Clicked Next - Waiting...")
+                    window["-LOG-"].update("CLICKED NEXT")
                 else:
-                    window["-LOG-"].update("Button lost - retrying...")
                     next_click_timer = 3 if values['-TURBO-'] else 5
 
-            # 2. Only check Humanizer if we AREN'T clicking
             elif values['-MOVE_ACTIVE-'] and next_move_timer <= 0:
                 w, h = pyautogui.size()
                 move_dur = 0.6 if values['-TURBO-'] else 1.5
                 pyautogui.moveTo(random.randint(100, w - 100), random.randint(100, h - 100), duration=move_dur)
 
-                # Reset Humanizer timer
                 m_range = MOVE_COOLDOWN_TURBO if values['-TURBO-'] else MOVE_COOLDOWN_NORMAL
                 next_move_timer = random.randint(*m_range)
 
