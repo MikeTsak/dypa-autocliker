@@ -1,3 +1,6 @@
 FreeSimpleGUI~=5.2.0.post1
 PyAutoGUI~=0.9.54
 keyboard~=0.13.5
+numpy~=2.4.4
+easyocr~=1.7.2
+pillow~=12.2.0
